@@ -1511,6 +1511,21 @@ export function SettingsWorkspace({ onApprovalGateChange }: SettingsWorkspacePro
         <p className="text-sm text-slate-500">No settings match your search.</p>
       )}
 
+      {hasSearch && searchMatches.some((match) => match.key === "harness_postures") ? (
+        <button
+          type="button"
+          onClick={() => {
+            setSearchQuery("");
+            handleTabChange("apps");
+          }}
+          data-testid="settings-search-open-apps"
+          className="flex min-h-11 w-full items-center justify-between rounded-xl border border-slate-100 bg-white px-4 py-3 text-left text-sm font-medium text-brand-dark hover:border-brand-blue/30"
+        >
+          Protection by app
+          <span className="text-xs font-semibold text-brand-blue">Open the Apps tab</span>
+        </button>
+      ) : null}
+
       {hasSearch && riskSearchMatches.length > 0 && (
         <div className="rounded-xl border border-slate-100 p-4">
           <SectionLabel>Matching fine-tuning rules</SectionLabel>

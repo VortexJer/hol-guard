@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { HiMiniEye, HiMiniShieldCheck } from "react-icons/hi2";
 
 import { SectionLabel } from "./approval-center-primitives";
@@ -105,14 +105,14 @@ export function FleetAppProtection(props: FleetAppProtectionProps) {
     [state],
   );
 
-  const commit = useCallback(async (harness: string, choice: HarnessPostureChoice, proof?: SettingsSaveProofCredentials) => {
-    if (state.kind !== "ready") return;
+  const commit = useCallback(async (harness: string, choice: HarnessPostureChoice, proof?: SettingsSaveProofCredentials): Promise<string | null> => {
+    if (state.kind !== "ready") return "App protection is still loading.";
     const saved = state.settings;
     const next = selectHarnessPosture(saved, harness, choice);
     const patch = harnessPosturePatch(next, saved);
     if (patch === null) {
       setPendingWatch(null);
-      return;
+      return null;
     }
     const update: GuardSettingsUpdate = { harness_postures: patch };
     if (gateEnabled) {
@@ -129,8 +129,9 @@ export function FleetAppProtection(props: FleetAppProtectionProps) {
       setStatusMessage(fleetPostureStatusMessage(choice, name));
       setPendingWatch(null);
       onChanged?.();
+      return null;
     } catch (cause: unknown) {
-      setError(cause instanceof Error ? cause.message : "Unable to change protection for this app.");
+      return cause instanceof Error ? cause.message : "Unable to change protection for this app.";
     } finally {
       setSavingHarness(null);
     }
@@ -145,8 +146,16 @@ export function FleetAppProtection(props: FleetAppProtectionProps) {
       return;
     }
     setPendingWatch(null);
-    void commit(harness, choice);
-  }, [state, commit]);
+    if (gateEnabled) {
+      const displayName = rows.find((row) => row.harness === harness)?.displayName ?? harness;
+      setProofError(null);
+      setProofRequest({ harness, displayName, choice });
+      return;
+    }
+    void commit(harness, choice).then((failure) => {
+      if (failure !== null) setError(failure);
+    });
+  }, [state, gateEnabled, rows, commit]);
 
   const handleConfirmWatch = useCallback((harness: string) => {
     setPendingWatch(null);
@@ -156,20 +165,21 @@ export function FleetAppProtection(props: FleetAppProtectionProps) {
       setProofRequest({ harness, displayName, choice: "watch" });
       return;
     }
-    void commit(harness, "watch");
+    void commit(harness, "watch").then((failure) => {
+      if (failure !== null) setError(failure);
+    });
   }, [gateEnabled, rows, commit]);
 
   const handleProofConfirm = useCallback(async (proof: SettingsSaveProofCredentials) => {
     if (proofRequest === null) return;
     setProofPending(true);
     setProofError(null);
-    try {
-      await commit(proofRequest.harness, proofRequest.choice, proof);
+    const failure = await commit(proofRequest.harness, proofRequest.choice, proof);
+    setProofPending(false);
+    if (failure === null) {
       setProofRequest(null);
-    } catch (cause: unknown) {
-      setProofError(cause instanceof Error ? cause.message : "Unable to continue.");
-    } finally {
-      setProofPending(false);
+    } else {
+      setProofError(failure);
     }
   }, [proofRequest, commit]);
 
@@ -220,66 +230,70 @@ export function FleetAppProtection(props: FleetAppProtectionProps) {
           const saving = savingHarness === row.harness;
           const options = harnessPostureOptions(state.settings, row.harness);
           return (
-            <li key={row.harness} className={tone === "watch" ? "bg-brand-attention/[0.04]" : undefined} data-harness={row.harness}>
-              <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="min-w-0">
-                  <p className="flex items-center gap-2 text-sm font-semibold text-brand-dark">
-                    {tone === "watch"
-                      ? <HiMiniEye className="h-4 w-4 shrink-0 text-brand-attention" aria-hidden="true" />
-                      : <HiMiniShieldCheck className="h-4 w-4 shrink-0 text-brand-blue" aria-hidden="true" />}
-                    {row.displayName}
-                  </p>
-                  <p className="mt-0.5 text-xs text-slate-500">{harnessRowStatus(row)}</p>
-                  {saving ? <p className="mt-0.5 text-xs text-slate-400">Saving…</p> : null}
-                </div>
-                <fieldset className="border-0 p-0">
-                  <legend className="sr-only">{`Protection for ${row.displayName}`}</legend>
-                  <div className="inline-flex gap-1 rounded-xl bg-slate-100 p-1">
-                    {options.map((option) => (
-                      <HarnessPostureChoiceLabel
-                        key={option.choice}
-                        groupName={`fleet-posture-${row.harness}`}
-                        choice={option.choice}
-                        label={option.label}
-                        selected={row.selected === option.choice}
-                        disabled={locked || saving}
-                        harness={row.harness}
-                        onChoose={handleChoice}
-                      />
-                    ))}
+            <Fragment key={row.harness}>
+              <li className={tone === "watch" ? "bg-brand-attention/[0.04]" : undefined} data-harness={row.harness}>
+                <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="flex items-center gap-2 text-sm font-semibold text-brand-dark">
+                      {tone === "watch"
+                        ? <HiMiniEye className="h-4 w-4 shrink-0 text-brand-attention" aria-hidden="true" />
+                        : <HiMiniShieldCheck className="h-4 w-4 shrink-0 text-brand-blue" aria-hidden="true" />}
+                      {row.displayName}
+                    </p>
+                    <p className="mt-0.5 text-xs text-slate-500">{harnessRowStatus(row)}</p>
+                    {saving ? <p className="mt-0.5 text-xs text-slate-400">Saving…</p> : null}
                   </div>
-                </fieldset>
-              </div>
-            </li>
+                  <fieldset className="border-0 p-0">
+                    <legend className="sr-only">{`Protection for ${row.displayName}`}</legend>
+                    <div className="inline-flex gap-1 rounded-xl bg-slate-100 p-1">
+                      {options.map((option) => (
+                        <HarnessPostureChoiceLabel
+                          key={option.choice}
+                          groupName={`fleet-posture-${row.harness}`}
+                          choice={option.choice}
+                          label={option.label}
+                          selected={row.selected === option.choice}
+                          disabled={locked || saving}
+                          harness={row.harness}
+                          onChoose={handleChoice}
+                        />
+                      ))}
+                    </div>
+                  </fieldset>
+                </div>
+              </li>
+              {pendingRow?.harness === row.harness ? (
+                <li
+                  className="bg-brand-attention/[0.06]"
+                  role="alertdialog"
+                  aria-label={`Switch ${pendingRow.displayName} to Watch`}
+                >
+                  <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm text-brand-dark">
+                      Guard will only record in {pendingRow.displayName} until you switch it back.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleConfirmWatch(pendingRow.harness)}
+                        className="inline-flex min-h-11 items-center rounded-lg bg-brand-attention px-4 text-sm font-semibold text-white"
+                      >
+                        Switch to Watch
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCancelWatch}
+                        className="inline-flex min-h-11 items-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium text-brand-dark"
+                      >
+                        Keep protection on
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              ) : null}
+            </Fragment>
           );
         })}
-        {pendingRow !== undefined ? (
-          <li
-            className="flex flex-col gap-3 bg-brand-attention/[0.06] px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-            role="alertdialog"
-            aria-label={`Switch ${pendingRow.displayName} to Watch`}
-          >
-            <p className="text-sm text-brand-dark">
-              Guard will only record in {pendingRow.displayName} until you switch it back.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => handleConfirmWatch(pendingRow.harness)}
-                className="inline-flex min-h-11 items-center rounded-lg bg-brand-attention px-4 text-sm font-semibold text-white"
-              >
-                Switch to Watch
-              </button>
-              <button
-                type="button"
-                onClick={handleCancelWatch}
-                className="inline-flex min-h-11 items-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium text-brand-dark"
-              >
-                Keep protection on
-              </button>
-            </div>
-          </li>
-        ) : null}
       </ul>
 
       {proofRequest !== null ? (

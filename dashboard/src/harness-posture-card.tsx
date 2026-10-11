@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { Fragment, useCallback, useMemo, useState } from "react";
 import { HiMiniEye, HiMiniMagnifyingGlass, HiMiniShieldCheck } from "react-icons/hi2";
 
 import { ActionButton } from "./approval-center-primitives";
@@ -131,41 +131,44 @@ export function HarnessPostureManager(props: HarnessPostureCardProps) {
 
       <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white">
         {visibleRows.map((row) => (
-          <HarnessPostureRowCard
-            key={row.harness}
-            row={row}
-            settings={settings}
-            locked={locked}
-            capability={props.capabilities.find((item) => item.harness === row.harness) ?? null}
-            onChoose={handleChoice}
-            onRestartWatch={handleRestartWatch}
-          />
+          <Fragment key={row.harness}>
+            <HarnessPostureRowCard
+              row={row}
+              settings={settings}
+              locked={locked}
+              capability={props.capabilities.find((item) => item.harness === row.harness) ?? null}
+              onChoose={handleChoice}
+              onRestartWatch={handleRestartWatch}
+            />
+            {pendingRow?.harness === row.harness ? (
+              <li
+                className="bg-brand-attention/[0.06]"
+                role="alertdialog"
+                aria-label={`Switch ${pendingRow.displayName} to Watch`}
+              >
+                <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm text-brand-dark">{harnessWatchPrompt(rows, pendingRow.harness)}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={handleConfirmWatch}
+                      className="inline-flex min-h-11 items-center rounded-lg bg-brand-attention px-4 text-sm font-semibold text-white"
+                    >
+                      Switch to Watch
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCancelWatch}
+                      className="inline-flex min-h-11 items-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium text-brand-dark"
+                    >
+                      Keep protection on
+                    </button>
+                  </div>
+                </div>
+              </li>
+            ) : null}
+          </Fragment>
         ))}
-        {pendingRow !== undefined ? (
-          <li
-            className="flex flex-col gap-3 bg-brand-attention/[0.06] px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-            role="alertdialog"
-            aria-label={`Switch ${pendingRow.displayName} to Watch`}
-          >
-            <p className="text-sm text-brand-dark">{harnessWatchPrompt(rows, pendingRow.harness)}</p>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={handleConfirmWatch}
-                className="inline-flex min-h-11 items-center rounded-lg bg-brand-attention px-4 text-sm font-semibold text-white"
-              >
-                Switch to Watch
-              </button>
-              <button
-                type="button"
-                onClick={handleCancelWatch}
-                className="inline-flex min-h-11 items-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium text-brand-dark"
-              >
-                Keep protection on
-              </button>
-            </div>
-          </li>
-        ) : null}
       </ul>
       {visibleRows.length === 0 ? (
         <p className="text-sm text-slate-500">No apps match your search.</p>
@@ -311,7 +314,7 @@ export function HarnessPostureSummaryCard(props: {
     >
       <div className="min-w-0">
         <p className="flex items-center gap-2 text-sm font-medium text-brand-dark">
-          <StatusDot tone={overrides.some((row) => harnessRowTone(row) === "watch") ? "watch" : "protected"} />
+          <StatusDot tone={rows.some((row) => harnessRowTone(row) === "watch") ? "watch" : "protected"} />
           {harnessPostureSummary(rows)}
         </p>
         <p className="mt-0.5 text-xs text-slate-500">

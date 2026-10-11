@@ -130,5 +130,23 @@ assert(
   inheritedSummary.includes("Apps follow the machine setting unless you choose Watch for one of them."),
   "summary card explains inheritance",
 );
+assert(
+  inheritedSummary.includes("rounded-full bg-brand-green"),
+  "protected machines show the green status dot",
+);
+
+// Machine-wide Watch without overrides still reads as attention on the card.
+const machineWatchSummary = renderToStaticMarkup(
+  <HarnessPostureSummaryCard
+    settings={settings({ protection_posture: "watch", mode: "observe" })}
+    capabilities={capabilities}
+    onOpenApps={() => undefined}
+  />,
+);
+assert(machineWatchSummary.includes("Every app is in Watch."), "machine Watch summary names the state");
+assert(
+  machineWatchSummary.includes("rounded-full bg-brand-attention"),
+  "machine Watch shows the attention status dot",
+);
 
 console.log("harness-posture-card.test.tsx: all assertions passed");
