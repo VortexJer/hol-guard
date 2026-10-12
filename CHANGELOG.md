@@ -92,6 +92,46 @@ Older releases are preserved in the [changelog archive](docs/changelog-archive.m
 * **native:** a package-intent parse now sends the caller's `PATH` to the resident. The resident is long-lived, so its own `PATH` is the one it was spawned with; a manager it cannot resolve (`npx` from a test or tool directory) made the TypeScript launch evidence incomplete and sent a contained typecheck back to review even though the caller resolved the manager fine.
 * **native:** a resident that answers a context-digest request with its own error envelope is now reported by that code — and recorded against the resilience breaker — instead of being flattened into `native_context_digest_result_invalid`. An envelope outside the contract keeps its code in the rejection reason, and a rejected result names the contract clause that rejected it with the offending keys, so a foreign frame, a stale frame and a truncated read are no longer indistinguishable.
 
+## [3.44.0](https://github.com/hashgraph-online/hol-guard/compare/v3.43.1...v3.44.0) (2026-10-12)
+
+
+### Features
+
+* **guard:** answer bounded CLI hooks from the native runtime ([#4313](https://github.com/hashgraph-online/hol-guard/issues/4313)) ([32965d1](https://github.com/hashgraph-online/hol-guard/commit/32965d19b3563da3f6f609ee819d66558385fa0a))
+* **guard:** answer Cline hooks from the native bounded bridge ([#4316](https://github.com/hashgraph-online/hol-guard/issues/4316)) ([653dcfa](https://github.com/hashgraph-online/hol-guard/commit/653dcfa829d260ead89b5863936c441fa97cd8aa))
+* **guard:** answer Hermes hooks from the native bounded bridge ([#4315](https://github.com/hashgraph-online/hol-guard/issues/4315)) ([cd5583a](https://github.com/hashgraph-online/hol-guard/commit/cd5583a2ddaab914ae61e4792dec90844ca86388))
+* **guard:** answer OpenCode shell reviews from the native bounded bridge ([#4317](https://github.com/hashgraph-online/hol-guard/issues/4317)) ([383acb7](https://github.com/hashgraph-online/hol-guard/commit/383acb73d33299d4b3871321ca36dc9d5ca36120))
+* **guard:** answer sensitive-request classifiers in the native resident ([#4300](https://github.com/hashgraph-online/hol-guard/issues/4300)) ([617cf4c](https://github.com/hashgraph-online/hol-guard/commit/617cf4c4b816bbf9115451c35c449cda87b9e564))
+* **guard:** build memory pattern fingerprints in the native runtime ([#4291](https://github.com/hashgraph-online/hol-guard/issues/4291)) ([f8effe3](https://github.com/hashgraph-online/hol-guard/commit/f8effe34b8a51e5854eed7dd50aba8c1444c62b6))
+* **guard:** let agents create a private GitHub repository without a prompt ([#4308](https://github.com/hashgraph-online/hol-guard/issues/4308)) ([4829d5d](https://github.com/hashgraph-online/hol-guard/commit/4829d5d2ef91d669d8b00fa405776fb40ea4cf31))
+* **guard:** review Cline plugin tool calls through the bounded hook bridge ([#4318](https://github.com/hashgraph-online/hol-guard/issues/4318)) ([787b41c](https://github.com/hashgraph-online/hol-guard/commit/787b41cbe7904afeb63c09fb1c5c37dda1553b9d))
+* **guard:** run the Claude hook bridge in the native runtime ([#4305](https://github.com/hashgraph-online/hol-guard/issues/4305)) ([8475a4c](https://github.com/hashgraph-online/hol-guard/commit/8475a4cd9c0c58eb53b164a2e4240c7a15d82552))
+* **guard:** run the Codex hook bridge in the native runtime ([#4307](https://github.com/hashgraph-online/hol-guard/issues/4307)) ([b945c4d](https://github.com/hashgraph-online/hol-guard/commit/b945c4d489178467f73fd0cfb7a5fa389eac5872))
+* **guard:** ship the source compiler inside the native runtime ([#4306](https://github.com/hashgraph-online/hol-guard/issues/4306)) ([04df190](https://github.com/hashgraph-online/hol-guard/commit/04df190a17e138213498693bfabf413d57d6aa2f))
+* move portable policy compilation and YAML admission to Rust ([#4239](https://github.com/hashgraph-online/hol-guard/issues/4239)) ([906306d](https://github.com/hashgraph-online/hol-guard/commit/906306dfe62d9c1c35006793915b865d1a548d11))
+* **runtime:** prepare contained execution plans in Rust ([#4280](https://github.com/hashgraph-online/hol-guard/issues/4280)) ([5c7a4ae](https://github.com/hashgraph-online/hol-guard/commit/5c7a4ae00438afc4b8c250ac277f9acdc3ad587a))
+
+
+### Bug Fixes
+
+* **gauntlet:** list required commands as plain lines in the agent prompt ([#4287](https://github.com/hashgraph-online/hol-guard/issues/4287)) ([225df27](https://github.com/hashgraph-online/hol-guard/commit/225df27eac6b8291eebd00f6722540cd33dbd872))
+* **gauntlet:** stop exporting a Unix loader path in the Windows realistic environment ([#4266](https://github.com/hashgraph-online/hol-guard/issues/4266)) ([0efdcd5](https://github.com/hashgraph-online/hol-guard/commit/0efdcd50b597a1fb3446eb8c1912ab48b61ab0b6))
+* **guard:** accept the guard prefix in contained runs on the Desktop launcher ([#4289](https://github.com/hashgraph-online/hol-guard/issues/4289)) ([759cac9](https://github.com/hashgraph-online/hol-guard/commit/759cac99a2b8676cf0e892b0a44962a26ab540fd))
+* **guard:** accept Windows home spellings in Oh My Pi agent-root listings ([#4296](https://github.com/hashgraph-online/hol-guard/issues/4296)) ([591b219](https://github.com/hashgraph-online/hol-guard/commit/591b2190ec42caba9e15dab858359dc1bf0c2cf0))
+* **guard:** let agent-home listings, sibling-repo grep and mktemp scratch dirs proceed ([#4255](https://github.com/hashgraph-online/hol-guard/issues/4255)) ([18786e5](https://github.com/hashgraph-online/hol-guard/commit/18786e5bfb0dba524937fb75acf43e0f3b656ead))
+* **guard:** let agents read their own plan notes and evidence ([#4295](https://github.com/hashgraph-online/hol-guard/issues/4295)) ([98065f4](https://github.com/hashgraph-online/hol-guard/commit/98065f4d39aeb37985b886d28b923925c42c435c))
+* **guard:** let command lookups, Guard help, merge-base and chained Git reads proceed ([#4281](https://github.com/hashgraph-online/hol-guard/issues/4281)) ([3eb5e17](https://github.com/hashgraph-online/hol-guard/commit/3eb5e17cf1dbd6fc5656d3d682e1d79fb221057f))
+* **guard:** let constant bun -e prints run when no Bun preload can load ([#4286](https://github.com/hashgraph-online/hol-guard/issues/4286)) ([7d5b3a4](https://github.com/hashgraph-online/hol-guard/commit/7d5b3a41fac33927d663ea06f2ef6d33dcdb3c38))
+* **guard:** let names-only listings of skill directories and missing paths proceed ([#4298](https://github.com/hashgraph-online/hol-guard/issues/4298)) ([c789512](https://github.com/hashgraph-online/hol-guard/commit/c78951271d159e489d8318b73804e6b63b877a9b))
+* **guard:** let pushes of the checked-out branch to a GitHub origin proceed natively ([#4285](https://github.com/hashgraph-online/hol-guard/issues/4285)) ([5f62907](https://github.com/hashgraph-online/hol-guard/commit/5f62907303a78f8f147c4f9be24791c11a865e3f))
+* **guard:** model command, time and env prefixes on ordinary programs ([#4293](https://github.com/hashgraph-online/hol-guard/issues/4293)) ([9efd096](https://github.com/hashgraph-online/hol-guard/commit/9efd096240349e6358074a4bb960b61e8fd18fae))
+* **guard:** prove cd ~/ prefixes and relative node_modules entrypoints ([#4278](https://github.com/hashgraph-online/hol-guard/issues/4278)) ([11f9e30](https://github.com/hashgraph-online/hol-guard/commit/11f9e30d082df6590483b8a50274e7d19d10f9f9))
+* **guard:** prove workspace symlinks and plain file removals natively ([#4297](https://github.com/hashgraph-online/hol-guard/issues/4297)) ([0d5d2e7](https://github.com/hashgraph-online/hol-guard/commit/0d5d2e760dc59756f84f86250e412aca8aca4f43))
+* **guard:** run `python -m unittest` and status-echo test commands in the read-only sandbox ([#4277](https://github.com/hashgraph-online/hol-guard/issues/4277)) ([68558a5](https://github.com/hashgraph-online/hol-guard/commit/68558a59d9e8b6d4a8a86ef9de9263de41248068))
+* **guard:** stop hard-blocking commands that set an environment variable ([#4294](https://github.com/hashgraph-online/hol-guard/issues/4294)) ([df45cbe](https://github.com/hashgraph-online/hol-guard/commit/df45cbe92295a632f3ec3287ad6a3dd8d14ec9be))
+* **guard:** treat Unix loader search paths as inert for Windows Git proofs ([#4275](https://github.com/hashgraph-online/hol-guard/issues/4275)) ([faedd08](https://github.com/hashgraph-online/hol-guard/commit/faedd08d1c4ce0c4a791cb73ec3f2ed8625f96cb))
+* **release:** optimize Windows alpha workspace code ([a82b426](https://github.com/hashgraph-online/hol-guard/commit/a82b4260dcb8c3f5c20535b0ed531a5968fc2d40))
+
 ## [3.43.1](https://github.com/hashgraph-online/hol-guard/compare/v3.43.0...v3.43.1) (2026-10-12)
 
 
