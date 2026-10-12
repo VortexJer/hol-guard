@@ -6,6 +6,7 @@ import { harnessDisplayName } from "./approval-center-utils";
 import { fetchSettings, updateSettings, type GuardSettingsUpdate } from "./guard-api";
 import type { GuardApprovalGatePublicConfig, GuardProtectionCapability, GuardSettings } from "./guard-types";
 import {
+  globalPosture,
   harnessPostureOptions,
   harnessPosturePatch,
   harnessPostureRows,
@@ -35,11 +36,13 @@ type ProofRequest = {
 
 export type GateProofUpdate = GuardApprovalGatePublicConfig & { current_password?: string; totp_code?: string };
 
+/**
+ * The machine posture the Protect-screen header states. Delegates to the
+ * shared derivation so the header can never disagree with the rows, including
+ * the legacy observe-mode fallback.
+ */
 export function fleetMachinePosture(settings: GuardSettings): ProtectionPosture {
-  if (settings.protection_posture === "extra_careful" || settings.protection_posture === "watch") {
-    return settings.protection_posture;
-  }
-  return "protected";
+  return globalPosture(settings);
 }
 
 export function fleetMachinePostureLabel(settings: GuardSettings): string {
@@ -371,8 +374,8 @@ export function FleetAppProtection(props: FleetAppProtectionProps) {
       {inactiveCount > 0 ? (
         <p className="border-t border-slate-100 px-4 py-2 text-xs text-slate-400">
           {inactiveCount === 1
-            ? "1 more app isn't connected yet. Set it up in App coverage below."
-            : `${inactiveCount} more apps aren't connected yet. Set them up in App coverage below.`}
+            ? "1 more app isn't connected yet — see App coverage below."
+            : `${inactiveCount} more apps aren't connected yet — see App coverage below.`}
         </p>
       ) : null}
 

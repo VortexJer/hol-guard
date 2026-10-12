@@ -1,10 +1,11 @@
-import { Fragment, useCallback, useMemo, useState } from "react";
+import { Fragment, useCallback, useMemo, useState, type ReactNode } from "react";
 import { HiMiniEye, HiMiniMagnifyingGlass, HiMiniShieldCheck } from "react-icons/hi2";
 
 import { ActionButton } from "./approval-center-primitives";
 import type { GuardProtectionCapability, GuardSettings } from "./guard-types";
 import {
   canRestartHarnessWatch,
+  globalPosture,
   harnessPostureOptions,
   harnessPostureRows,
   harnessPostureSummary,
@@ -19,7 +20,7 @@ import {
   type HarnessPostureChoice,
   type HarnessPostureRow,
 } from "./harness-posture-ui";
-import { PROTECTION_POSTURE_COPY, type ProtectionPosture } from "./protection-posture-copy";
+import { PROTECTION_POSTURE_COPY } from "./protection-posture-copy";
 
 type HarnessPostureCardProps = {
   settings: GuardSettings;
@@ -29,12 +30,6 @@ type HarnessPostureCardProps = {
   onChangeTab?: (tab: "protection") => void;
   testId?: string;
 };
-
-function machinePosture(settings: GuardSettings): ProtectionPosture {
-  if (settings.protection_posture === "watch") return "watch";
-  if (settings.protection_posture === "extra_careful") return "extra_careful";
-  return "protected";
-}
 
 /**
  * Full per-app protection manager for the Apps settings tab. Rows in Watch sort
@@ -54,7 +49,7 @@ export function HarnessPostureManager(props: HarnessPostureCardProps) {
     : sortedRows.filter((row) =>
         row.displayName.toLowerCase().includes(query) || row.harness.toLowerCase().includes(query)
       );
-  const machineLabel = PROTECTION_POSTURE_COPY[machinePosture(settings)].label;
+  const machineLabel = PROTECTION_POSTURE_COPY[globalPosture(settings)].label;
   const pendingRow = pendingWatch !== null
     ? visibleRows.find((row) => row.harness === pendingWatch)
     : undefined;
@@ -268,6 +263,13 @@ export function HarnessPostureChoiceLabel(props: {
       : "cursor-pointer bg-brand-blue text-white shadow-sm";
   }
 
+  let icon: ReactNode = null;
+  if (!props.compact) {
+    icon = isWatch
+      ? <HiMiniEye className="h-4 w-4 shrink-0" aria-hidden="true" />
+      : <HiMiniShieldCheck className="h-4 w-4 shrink-0" aria-hidden="true" />;
+  }
+
   return (
     <label
       className={`flex min-h-11 items-center justify-center rounded-lg py-2 text-sm font-semibold transition-colors focus-within:ring-2 focus-within:ring-brand-blue ${
@@ -283,11 +285,7 @@ export function HarnessPostureChoiceLabel(props: {
         onChange={handleChange}
         className="sr-only"
       />
-      {props.compact ? null : isWatch ? (
-        <HiMiniEye className="h-4 w-4 shrink-0" aria-hidden="true" />
-      ) : (
-        <HiMiniShieldCheck className="h-4 w-4 shrink-0" aria-hidden="true" />
-      )}
+      {icon}
       {props.label}
     </label>
   );

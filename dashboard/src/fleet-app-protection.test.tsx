@@ -72,6 +72,14 @@ assert(
   fleetMachinePostureLabel(settings({ protection_posture: "extra_careful" })) === "Extra careful",
   "machine posture uses the shared labels",
 );
+assert(
+  fleetMachinePostureLabel(settings({ protection_posture: undefined, mode: "observe" })) === "Watch",
+  "legacy observe mode without an explicit posture reads as Watch, matching the rows",
+);
+assert(
+  fleetMachinePostureLabel(settings({ protection_posture: "protected", mode: "observe" })) === "Protected",
+  "an explicit posture wins over the legacy mode, matching the rows",
+);
 
 assert(
   fleetPostureStatusMessage("watch", "Codex") === "Guard is only recording in Codex.",
