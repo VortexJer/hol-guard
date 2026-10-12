@@ -250,6 +250,8 @@ export function HarnessPostureChoiceLabel(props: {
   disabled: boolean;
   harness: string;
   onChoose: (harness: string, choice: HarnessPostureChoice) => void;
+  /** Dense layout for inline surfaces such as the Protect screen. */
+  compact?: boolean;
 }) {
   const handleChange = useCallback(() => {
     if (props.disabled) return;
@@ -268,7 +270,9 @@ export function HarnessPostureChoiceLabel(props: {
 
   return (
     <label
-      className={`flex min-h-11 min-w-24 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition-colors focus-within:ring-2 focus-within:ring-brand-blue ${choiceClass}`}
+      className={`flex min-h-11 items-center justify-center rounded-lg py-2 text-sm font-semibold transition-colors focus-within:ring-2 focus-within:ring-brand-blue ${
+        props.compact ? "min-w-20 px-2.5" : "min-w-24 gap-1.5 px-3"
+      } ${choiceClass}`}
     >
       <input
         type="radio"
@@ -279,7 +283,7 @@ export function HarnessPostureChoiceLabel(props: {
         onChange={handleChange}
         className="sr-only"
       />
-      {isWatch ? (
+      {props.compact ? null : isWatch ? (
         <HiMiniEye className="h-4 w-4 shrink-0" aria-hidden="true" />
       ) : (
         <HiMiniShieldCheck className="h-4 w-4 shrink-0" aria-hidden="true" />
