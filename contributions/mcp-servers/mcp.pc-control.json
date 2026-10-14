@@ -41,6 +41,6 @@
   "saferAlternatives": [
     "Keep click, type, key, drag, steps and open_app on review: they can press buttons, write text, run shortcuts and start programs on the desktop. steps runs several of those in one call.",
     "Use PC-Control's own permission modes (ask or strict) so protected windows such as terminals and password managers always ask first.",
-    "Install an exact version from PyPI, for example pip install claude-pc-control==0.7.0, and run pc-control status to see which mode is active."
+    "Install an exact version from PyPI, for example pip install claude-pc-control==0.7.7, and run pc-control status to see which mode is active."
   ]
 }
