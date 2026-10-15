@@ -217,7 +217,14 @@ mod mapping_elf;
 mod mapping_snapshot;
 mod paths;
 mod profiles;
+mod toolchains;
+mod user_site;
 mod validation;
+mod venv;
+mod workspace;
+mod workspace_linked;
+mod workspace_linux;
+mod workspace_overlay;
 pub fn evaluate_with_deadline(
     operation: &str,
     input: &serde_json::Value,
@@ -226,8 +233,12 @@ pub fn evaluate_with_deadline(
     mapping::evaluate(operation, input, deadline).unwrap_or_else(|| evaluate(operation, input))
 }
 pub use authority::evaluate;
+pub use mapping::evidence as mapping_evidence;
+pub(crate) use workspace::{exact_shape as workspace_exact_shape, workspace_admissible};
+pub(crate) use workspace_linux::available as linux_workspace_sandbox_available;
 #[cfg(test)]
 mod parity_tests;
 use executables::*;
 use paths::*;
+use toolchains::workspace_exec_roots;
 use validation::*;

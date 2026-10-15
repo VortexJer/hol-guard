@@ -97,8 +97,8 @@ def _python_codex_hook_bridge(request: pytest.FixtureRequest, monkeypatch: pytes
 def _python_bounded_hook_bridge(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch) -> None:
     """Install bounded CLI hooks with the Python bridge argv unless a test opts in.
 
-    Copilot, Kimi, Devin, ZCode and OpenClaw install tests pin the Python
-    bridge contract. Tests marked ``native_bounded_hook_bridge`` keep the
+    Copilot, Kimi, Devin, ZCode, OpenClaw and Cursor install tests pin the
+    Python bridge contract. Tests marked ``native_bounded_hook_bridge`` keep the
     native runtime selection.
     """
 
@@ -107,6 +107,27 @@ def _python_bounded_hook_bridge(request: pytest.FixtureRequest, monkeypatch: pyt
     # Subprocess installers copy os.environ and do not see a monkeypatched
     # function. The launcher treats this value as the Python bridge pin.
     monkeypatch.setenv("HOL_GUARD_BOUNDED_HOOK_BRIDGE", "python")
+    monkeypatch.setenv("HOL_GUARD_CURSOR_HOOK_BRIDGE", "python")
+
+
+@pytest.fixture(autouse=True)
+def _python_mcp_proxy_launcher(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Install MCP proxies with the Python launcher argv unless a test opts in.
+
+    Most install and refresh tests pin the Python proxy entry. Relay tests
+    select the native relay by setting or clearing ``HOL_GUARD_MCP_RELAY``.
+    """
+
+    # Subprocess installers copy os.environ, so the pin is an environment value.
+    monkeypatch.setenv("HOL_GUARD_MCP_RELAY", "python")
+
+
+@pytest.fixture(autouse=True)
+def _reset_registry_cache() -> None:
+    """A registry document one test cached must not answer another test."""
+    from codex_plugin_scanner.guard.native_supply_chain_registry_cache import REGISTRY_CACHE
+
+    REGISTRY_CACHE.clear()
 
 
 @pytest.fixture(autouse=True)

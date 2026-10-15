@@ -292,7 +292,9 @@ fn evaluate_validated_envelope(
                     cwd: envelope.source.cwd.as_deref(),
                     cdpath_unset: false,
                     rustup_override_absent: false,
+                    npm_config_inert: false,
                     shell_home_matches: false,
+                    ripgrep_config_absent: false,
                 },
                 Some(
                     envelope

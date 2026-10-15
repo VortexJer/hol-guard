@@ -290,7 +290,10 @@ def test_exec_hook_does_not_run_marker_embedded_in_workspace_path(tmp_path: Path
     )
 
     assert result.returncode == 0
-    assert result.stderr == ""
+    # The resident writes phase timing when it answers the prompt. Those lines
+    # are not the injected command. Anything else on stderr still fails.
+    unexpected = [line for line in result.stderr.splitlines() if not line.startswith("native_resident_phase ")]
+    assert unexpected == []
     assert not marker_path.exists()
 
 
@@ -318,7 +321,6 @@ def _native_status(features: tuple[str, ...], path: Path):
     )
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="the native Claude bridge is POSIX-only")
 def test_daemon_hook_uses_the_native_bridge_when_the_runtime_offers_it(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

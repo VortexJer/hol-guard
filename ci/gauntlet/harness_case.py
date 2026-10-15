@@ -18,10 +18,17 @@ from .catalog import WATCH_COMMAND, WATCH_PROMPT, Scenario
 from .cleanup import cleanup_case_resources
 from .evidence import sha256_bytes
 from .extension_adapters import configure_extension_permission_denial, extension_adapter
-from .fixtures import create_fixture, digest_file, filesystem_checks, scenario_fixture_name
+from .fixtures import (
+    create_fixture,
+    digest_file,
+    filesystem_checks,
+    remove_scratch_checkout,
+    scenario_fixture_name,
+    scratch_checkout,
+)
 from .guard_tap import GuardTap, read_tap
 from .harness_judge import assess_harness_case, guard_decisions
-from .harnesses import CredentialSeed, adapter, credential_environment, read_transcript
+from .harnesses import CredentialSeed, adapter, credential_environment, keep_login_shell_path, read_transcript
 from .host_process import clean_environment, realistic_environment, run_process
 from .input_evidence import redact_value
 from .provider import LoopbackCollector
@@ -81,6 +88,7 @@ def harness_environment(
         environment = realistic_environment(environment, home)
     environment.update(spec.extra_env)
     environment.update(spec.home_environment(home))
+    environment.update(spec.keychain_environment())
     environment.update(login_environment)
     return environment
 
@@ -99,7 +107,7 @@ def run_harness_case(
     """Exercise one scenario through a real harness CLI and its installed Guard hooks."""
     spec = adapter(harness)
     realistic = scenario.oracle == "native-tools"
-    fixture = create_fixture(root / scenario_fixture_name(scenario.id), realistic=realistic)
+    fixture = create_fixture(root / scenario_fixture_name(scenario.id), realistic=realistic, scenario_id=scenario.id)
     stage_supply_chain(fixture.workspace, scenario.id)
     private = fixture.root / "private-evidence"
     private.mkdir(mode=0o700)
@@ -128,7 +136,13 @@ def run_harness_case(
         with LoopbackCollector() as collector:
             replacements[collector.url] = "{{collector_url}}"
             rendered = scenario.render(
-                {"home": str(fixture.home), "workspace": str(fixture.workspace), "collector_url": collector.url}
+                {
+                    "home": str(fixture.home),
+                    "workspace": str(fixture.workspace),
+                    "root": str(fixture.root),
+                    "scratch": str(scratch_checkout(fixture.root)),
+                    "collector_url": collector.url,
+                }
             )
             prompt, context = route_task(
                 scenario,
@@ -190,6 +204,7 @@ def run_harness_case(
             )
             if scenario.oracle == "blocked-extension" or scenario.id in BUSINESS_CLI_CASES | GITHUB_STUB_CASES:
                 environment["PATH"] = str(fixture.root / "bin") + os.pathsep + environment["PATH"]
+            keep_login_shell_path(fixture.home, environment["PATH"])
             spec.prepare_context(fixture.workspace, context)
             command = spec.command(
                 executable,
@@ -232,6 +247,7 @@ def run_harness_case(
             case["credential_write_back_error"] = type(exc).__name__
         finally:
             case["filesystem"] = filesystem_checks(fixture, scenario.oracle, scenario.id)
+            remove_scratch_checkout(fixture.root)
             if daemon is not None:
                 case.update(cleanup_case_resources(daemon, identity, guard_home, private))
     case["elapsed_seconds"] = round(time.monotonic() - started, 3)

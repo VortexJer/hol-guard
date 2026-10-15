@@ -34,6 +34,7 @@ pub(super) fn resolve_workspace_with_home(
     if !PROJECT_WORKSPACE_MARKERS
         .iter()
         .any(|marker| resolved.join(marker).exists())
+        && !holds_root_test_module(&resolved)
     {
         return Err(RestrictedPytestError::new(
             PYTEST_INVALID_WORKSPACE_REASON_CODE,
@@ -43,12 +44,36 @@ pub(super) fn resolve_workspace_with_home(
     Ok(resolved)
 }
 
+/// pytest treats a directory holding `conftest.py` or a `test_*.py` module as
+/// its root when no configuration file exists, so a fresh project with only
+/// source and tests still counts. The broad and sensitive roots are refused
+/// before this runs. Only regular files count, and the scan stops early.
+fn holds_root_test_module(workspace: &Path) -> bool {
+    let Ok(entries) = fs::read_dir(workspace) else {
+        return false;
+    };
+    entries.take(512).flatten().any(|entry| {
+        let name = entry.file_name();
+        let Some(name) = name.to_str() else {
+            return false;
+        };
+        let test_module = name == "conftest.py"
+            || name.strip_suffix(".py").is_some_and(|stem| {
+                stem.len() > 5 && (stem.starts_with("test_") || stem.ends_with("_test"))
+            });
+        test_module && entry.file_type().is_ok_and(|kind| kind.is_file())
+    })
+}
+
 /// `_workspace_is_broad_or_sensitive` (:78-104).
 pub(super) fn workspace_is_broad_or_sensitive(workspace: &Path) -> bool {
     workspace_is_broad_or_sensitive_for_home(workspace, None)
 }
 
-fn workspace_is_broad_or_sensitive_for_home(workspace: &Path, home: Option<&Path>) -> bool {
+pub(super) fn workspace_is_broad_or_sensitive_for_home(
+    workspace: &Path,
+    home: Option<&Path>,
+) -> bool {
     let broad_roots: HashSet<PathBuf> = [
         "/",
         "/Users",
@@ -158,10 +183,13 @@ pub(super) fn resolve_pytest_executable(
     let launch_executable = locate_executable(&command[0], cwd, search_path)?;
     let executable = resolve_executable(&command[0], cwd, search_path)?;
     let launched_from_workspace = path_is_within_lexically(&launch_executable, workspace);
-    if !launched_from_workspace && !path_is_within_any(&executable, &TRUSTED_EXECUTABLE_ROOTS) {
+    if !launched_from_workspace
+        && !path_is_within_any(&executable, &TRUSTED_EXECUTABLE_ROOTS)
+        && venv::external_root(&launch_executable, &executable, workspace).is_none()
+    {
         return Err(RestrictedPytestError::new(
             PYTEST_INVALID_COMMAND_REASON_CODE,
-            "Restricted pytest executable must be inside the workspace or a trusted system installation root.",
+            "Contained executable must be inside the workspace, a trusted system installation root, or a virtual environment of a trusted Python runtime.",
         ));
     }
     if PYTEST_EXECUTABLE_NAMES.contains(command_name.as_str())
