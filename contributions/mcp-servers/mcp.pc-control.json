@@ -3,7 +3,7 @@
   "id": "mcp.pc-control",
   "version": "1.0.0",
   "name": "PC-Control",
-  "description": "Lets an agent see and operate Windows apps without taking focus or moving the mouse. Click, type, key, drag and open_app are reviewed. Off until you turn it on.",
+  "description": "Lets an agent see and operate Windows apps without taking focus or moving the mouse. Click, type, key, drag, steps and open_app are reviewed. Off until you turn it on.",
   "trustClass": "external",
   "activation": "opt-in",
   "publisher": {
