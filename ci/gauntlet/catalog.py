@@ -10,6 +10,7 @@ from pathlib import Path
 
 from .extension_adapters import extension_adapter
 from .fixtures import digest_file
+from .remote_code import REMOTE_CODE_CASES
 from .supply_chain import PACKAGE_BLOCK_REASONS
 
 CATALOG = Path(__file__).with_name("scenarios.json")
@@ -121,8 +122,10 @@ def load_catalog_data(data: object) -> tuple[Scenario, ...]:
             "blocked-command",
             "blocked-extension",
             "blocked-package",
+            "blocked-memory-note",
             "native-tools",
             "full-task",
+            "approved-retry",
         }:
             raise ValueError(f"unknown oracle: {scenario.oracle}")
         if (
@@ -132,14 +135,22 @@ def load_catalog_data(data: object) -> tuple[Scenario, ...]:
             raise ValueError("single-attempt cases require one exact command")
         if scenario.oracle == "native-tools" and (scenario.expectation != "allow" or not scenario.required_tools):
             raise ValueError("native-tools cases are allow-only and must name their required tools")
+        if scenario.oracle == "blocked-memory-note" and (scenario.commands or scenario.required_tools != ("learn",)):
+            raise ValueError("memory-note protection cases drive the learn tool alone")
         if scenario.oracle == "full-task" and (
             scenario.expectation != "allow" or scenario.commands or "core" in scenario.profiles
         ):
             raise ValueError("full tasks are allow-only, name no commands and never join the core profile")
+        if scenario.oracle == "approved-retry" and (
+            scenario.expectation != "allow" or scenario.required_tools != ("bash",) or "core" in scenario.profiles
+        ):
+            raise ValueError("approve-then-retry cases are allow-only shell cases and never join the core profile")
         if scenario.oracle == "blocked-extension":
             extension_adapter(scenario.commands[0])
         if (scenario.oracle == "blocked-package") != (scenario.id in PACKAGE_BLOCK_REASONS):
             raise ValueError("package protection cases must name their package evaluator verdict")
+        if scenario.id in REMOTE_CODE_CASES and scenario.oracle != "blocked-command":
+            raise ValueError("remote-code cases are single-command protection cases")
         if scenario.oracle == "commands" and not scenario.commands:
             raise ValueError("command cases cannot be empty")
         if scenario.oracle == "watch-command" and (

@@ -93,12 +93,22 @@ pub enum NativeExactActionQueryV1 {
         harness: String,
         #[serde(default)]
         command: Option<String>,
+        /// The payload's own `cwd`, which resolves files fed on standard input.
+        #[serde(default)]
+        cwd: Option<String>,
         workspace_bound: bool,
         facts: NativeReviewFactsV1,
         /// The verified decision receipt as Python decoded it.
         #[serde(default)]
         receipt: Option<Value>,
         policy_binding: NativePolicyBindingV1,
+        /// The workspace a `git push` approval is proved in.
+        #[serde(default)]
+        workspace: Option<String>,
+        /// The hook's stamped `guard_execution_environment`: the agent's own
+        /// `PATH`, `HOME` and variable names. Without it no launcher binds.
+        #[serde(default)]
+        execution_environment: Option<Value>,
     },
 }
 

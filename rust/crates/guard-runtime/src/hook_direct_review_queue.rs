@@ -90,7 +90,13 @@ pub(super) fn answer(
     token: &Result<String, &'static str>,
 ) -> Result<Value, HookDirectDefer> {
     let facts = facts(context, result).ok_or(HookDirectDefer::ReviewQueue)?;
-    let review_binding = crate::native_exact_action_op::review_binding_for(exact, receipt);
+    let review_binding = crate::native_exact_action_op::review_binding_for(
+        exact,
+        receipt,
+        context
+            .recorded_payload
+            .get(crate::hook_direct::EXECUTION_ENVIRONMENT_FIELD),
+    );
     let request_id = request_id().ok_or(HookDirectDefer::ReviewQueue)?;
     let input = RequestInput {
         harness: context.harness,
@@ -208,9 +214,13 @@ fn silent(
         retry_reuses_approval,
         exact_action_allowable,
     );
+    // Approving a row that is neither bound to the retry nor eligible for an
+    // exact-action Always cannot let the agent run the action, so the reason
+    // does not send the user to approve it.
     let approval_url = request
         .get("approval_url")
         .and_then(Value::as_str)
+        .filter(|_| retry_reuses_approval || exact_action_allowable)
         .map(str::to_owned);
     // The unlinked block renders before the write, so a block the resident
     // cannot render leaves the queue to the daemon.

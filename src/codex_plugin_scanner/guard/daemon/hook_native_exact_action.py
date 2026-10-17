@@ -20,6 +20,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+from ..hook_execution_environment import HOOK_EXECUTION_ENVIRONMENT_KEY
 from ..native_daemon_route import EXACT_ACTION_ASK_SLOTS, _decide
 from ..native_resident_decision import ResidentOperation
 from ..runtime.extension_control_runtime import current_extension_control_binding_digest
@@ -167,6 +168,11 @@ def native_exact_action(
     return token, reason
 
 
+def _execution_environment(payload: Mapping[str, object]) -> dict[str, object] | None:
+    stamped = payload.get(HOOK_EXECUTION_ENVIRONMENT_KEY)
+    return dict(stamped) if isinstance(stamped, Mapping) else None
+
+
 def native_review_binding(
     harness: str,
     payload: Mapping[str, object],
@@ -177,15 +183,22 @@ def native_review_binding(
 ) -> str | None:
     """Bind a short-lived retry to Rust-owned request and decision evidence."""
 
+    raw_cwd = payload.get("cwd")
     try:
         query: dict[str, object] = {
             "kind": "review_binding",
             "harness": harness,
             "command": pre_tool_command(payload),
+            "cwd": raw_cwd if isinstance(raw_cwd, str) and raw_cwd.strip() else None,
             "workspace_bound": workspace is not None,
             "facts": _facts(native_result),
             "receipt": dict(native_receipt) if isinstance(native_receipt, Mapping) else None,
             "policy_binding": _policy_binding(harness, native_result, native_receipt),
+            # A plain `git push origin <branch>` binds to the native push proof,
+            # which runs in the agent's own stamped environment, never this
+            # process's.
+            "workspace": _text(workspace),
+            "execution_environment": _execution_environment(payload),
         }
         return _answer(query, guard_home)["binding"]
     except (NativeExactActionError, OSError, RuntimeError, TypeError, ValueError) as error:
